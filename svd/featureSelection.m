@@ -7,12 +7,13 @@ function [features, selected] = featureSelection(A, k, r)
     % Compute the normalized leverage scores
     p = vecnorm(Vk') .^ 2 / k;
 
-    % r i.i.d sample
+    % Randomly sample r features based on leverage score
     features = sort(datasample(1:d, r, 'Replace', false, 'Weights', p));
 
-    % Select
+    % Select the features
     selected = A(:, features);
-    % Rescale
-    selected = r ^ (-1/2) * selected .* (p(features) .^ (-1/2));
+    
+    % Rescale the resulting matrix
+    selected = selected .* ((r * p(features)) .^ (-1/2));
 end
 
