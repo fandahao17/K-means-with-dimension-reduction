@@ -8,8 +8,10 @@ function [features, selected] = featureSelection(A, k, r)
     p = vecnorm(Vk') .^ 2 / k;
 
     % Randomly sample r features based on leverage score
-    features = sort(datasample(1:d, r, 'Replace', false, 'Weights', p));
+    features = sort(datasample(1:d, r, 'Replace', true, 'Weights', p));
 
+    p(features)
+    
     % Select the features
     selected = A(:, features);
     
