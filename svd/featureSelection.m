@@ -9,8 +9,6 @@ function [features, selected] = featureSelection(A, k, r)
 
     % Randomly sample r features based on leverage score
     features = sort(datasample(1:d, r, 'Replace', true, 'Weights', p));
-
-    p(features)
     
     % Select the features
     selected = A(:, features);

@@ -9,7 +9,7 @@ function [P,F] = calc_result(A, clusters, label, num_clusters)
         X(i, clusters(i)) = 1 / sqrt(num(clusters(i)));
     end
     
-    F = norm(A - X * X' * A) / norm(A);
+    F = (norm(A - X * X' * A) / norm(A)) ^ 2;
     
     % Calculate P
     orders = [1 2 3; 1 3 2; 2 1 3; 2 3 1; 3 1 2; 3 2 1];
