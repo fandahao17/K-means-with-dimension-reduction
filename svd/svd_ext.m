@@ -4,7 +4,7 @@ clear;
 
 [data, k, samples, label] = prep_orl();
 
-[~, ~, V] = pca(data, k);
+[~, ~, V] = fastsvd(data, k);
 
 extm = data * V;
 

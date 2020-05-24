@@ -1,4 +1,4 @@
-function [U,S,V] = pca(A,k,raw,its,l)
+function [U,S,V] = fastsvd(A,k,raw,its,l)
 %PCA  Principal component analysis
 %
 %
