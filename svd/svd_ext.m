@@ -2,13 +2,7 @@ clear;
 
 % [label, data, words] = prep();
 
-k = 40;
-samples = 10;
-load('~/Downloads/data.mat');
-data = fea;
-labels = zeros(1, subjects * samples);
-for i = 1:subjects
-        labels((i - 1) * samples + 1 : i * samples) = i;
+[data, k, samples, label] = prep_orl();
 
 [~, ~, V] = pca(data, k);
 
