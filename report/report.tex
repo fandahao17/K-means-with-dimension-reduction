@@ -43,6 +43,32 @@
     本文中算法的代码实现、实验结果和实验报告均在本项目的 \href{https://github.com/fandahao17/K-means-with-dimension-reduction}{GitHub} 仓库中。
     
     \subsection{数学符号约定}
+    由于下文涉及大量数学推导，因此在此给出其中使用的数学符号的约定：
+    \begin{itemize}
+        \item 对于$n \times d$数据矩阵$A$，约定$U_k \in R^{n \times k}$（$V_k \in R^{k \times d}$为前k个左（右）特征向量，$\Sigma_k \in R^{k \times k}$为
+            A的前k个特征向量组成的对角矩阵。
+        \item 约定$\rho$为A的秩，则$A_{\rho - k}$等于$A-A_k$，其中$A_k=U_k \Sigma_k V_k$。
+        \item 约定$\Vert A \Vert_F$和$\Vert A \Vert_2$为A的Frobenius范数和频谱范数。矩阵范数满足如下性质：$\Vert XY \Vert_F \leq \Vert X \Vert_F \Vert Y \Vert_2$且
+            $\Vert XY \Vert_F \leq \Vert X \Vert_2 \Vert Y \Vert_F$。
+        \item 称$A^+$为A的伪逆，$\Vert A^+ \Vert = \sigma_{max}(A^+)=1/\sigma_{min}(A)$，
+            其中$\sigma_{max}$和$\sigma_{min}$分别代表矩阵最大和最小的奇异值。
+        \item 对于一个方阵$P$，若其满足$P^2=P$，则称其为投影矩阵。
+    \end{itemize}
+
+    \subsection{k-means目标函数的形式化}
+    有了以上数学符号，我们可以从线性代数的角度给出$k$-means目标函数的定义：
+    \begin{equation*}
+        X_{opt} = \mathop{\arg\min}_{X \in \chi} \| A - XX^{\top}A \|_{F}^2 \label{opt}
+    \end{equation*}
+
+    其中X表示聚类的结果，当且仅当第i个点属于第j类的时候$X_{ij}$非零，并且$X_{ij}= 1/\sqrt{z_{j}}$, 其中$z_{j}$表示在对应类中的点的数量，这样就保证了$XX^TA$表示各点所属的类中心的位置，
+    $\Vert A-XX^TA \Vert_F^2$就是各点到类中心距离的平方和。
+
+    在下文中，我们都将从以上角度分析$k$-means聚类问题。事实上，不论是运用特征选择算法还是
+    特征提取算法，降维后的矩阵中的列都是$A$中的列的线性组合，因此，降维后的矩阵都可以用$C=AD$来表示。
+    \cite{drineas1999clustering}的结果表明，对$A$的低秩估计可以被用来在$k$-means聚类时进行降维。
+    我们可以通过$C=AD$得到$A$的低秩估计，因此下文的主要思路就是设法得到在$k$-means聚类
+    时误差足够小的“好的估计”。
 
 
     \section{基于随机投影的降维方法}
@@ -50,13 +76,6 @@
 
     \subsection{背景和引入}
         随机投影属于特征提取方法的一种，所依据的原理是JL 引理\cite{johnson1984extensions}，即经过线性变换f之后原点集中两个点的距离仍然在一定误差范围内保持，这样的性质适合在k-means中使用。
-
-        K-means的目标函数用矩阵表示为
-        \begin{equation*}
-            X_{opt} = \mathop{\arg\min}_{X \in \chi} \| A - XX^{\top}A \|_{F}^2 \label{opt}
-        \end{equation*}
-
-        其中X表示聚类的结果，当且仅当第i个点属于第j类的时候$X_{ij}$非零，并且$X_{ij}= 1/\sqrt{z_{j}}$, 其中$z_{j}$表示在对应类中的点的数量，这样就保证了后面一项表示各点所属的类类中心的位置。
 
         在这个实验中我们使用Lloyd算法实现k-means聚类，虽然这个算法没有最差保证，但是通过初始点的选择保证聚类的效果不会很差。
 
