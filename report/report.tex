@@ -3,12 +3,19 @@
 \usepackage{cite}
 \usepackage{amsmath}
 \usepackage{algorithm}
+\usepackage{geometry}
+\usepackage{url}
+\usepackage{hyperref}
 \usepackage{algorithmic}
 \usepackage{graphicx}
 \usepackage{amsthm}
 \usepackage{amssymb}
 
-\title{SVD和随机投影两种降维方法在K-means中的应用}
+% Define the section symbol
+\renewcommand{\sectionautorefname}{\S}
+\geometry{left=3.17cm,right=3.17cm,top=2.54cm,bottom=2.54cm}
+
+\title{用于$k$-means聚类的降维方法研究}
 \author{李纯羽 \and 樊金昊}
 \begin{document}
     \maketitle
@@ -20,25 +27,29 @@
     \newpage
 
     \section{背景}
-    Background扯一扯？
+    聚类是大数据分析中的一种常用方法，从生物学的基因组分析到计算机科学中的社交网络，降维方法都有着广泛的应用\cite{Mahoney2009cur}。
+    其中，最著名的就是$k$-means聚类算法，又称Lloyd算法。$k$-means算法是一种迭代算法，其优化目标是使所有点到其对应的类中心的距离之和最小\cite{blum2020foundations}。
+    由于其高度的有效性，$k$-means算法获得了广泛的应用。
 
-    \section{基于SVD分解的降维方法}
-    此处介绍算法原理和数学推导？
+    由于$k$-means算法需要大量进行距离计算，而后者的复杂度与特征的维度成正比，在实际的大数据分析中，高维的数据给$k$-means计算带来了巨大挑战。
+    为了解决这些挑战，研究人员提出了\textbf{特征选择}(\textit{feature selection})和\textbf{特征提取}(\textit{feature extraction})等方法。
+    其中，\textbf{特征选择}指的是选取所有特征的子集，在该子集上运行$k$-means聚类算法，而\textbf{特征提取}指的是根据原有特征构造出一些人造的特征，
+    在这些特征上运行聚类算法。
 
-    \section{实验复现}
-    复现实验的结果和我们的思考？
+    在本文中，我们研究了一种基于随机投影的特征提取算法(\autoref{sec:rpsec}）和一种基于特征值分解的特征选择算法（\autoref{sec:svdsec}）。
+    我们通过理论推导和实验验证分别证明了以上两种方法的正确性。此外，针对这两种方法存在的问题，
+    我们进行了分析并提出了我们的改进方案。对比实验证明我们的改进方案有明显的效果。
 
-    \section{思考与改进}
-    改进？
-
-    \section{实验结果}
-    改进结果？
+    本文中算法的代码实现、实验结果和实验报告均在本项目的 \href{https://github.com/fandahao17/K-means-with-dimension-reduction}{GitHub} 仓库中。
     
+    \subsection{数学符号约定}
+
+
     \section{基于随机投影的降维方法}
-    
+    \label{sec:rpsec}
 
     \subsection{背景和引入}
-        随机投影属于特征提取方法的一种，所依据的原理是JL 引理，即经过线性变换f之后原点集中两个点的距离仍然在一定误差范围内保持，这样的性质适合在k-means中使用。
+        随机投影属于特征提取方法的一种，所依据的原理是JL 引理\cite{johnson1984extensions}，即经过线性变换f之后原点集中两个点的距离仍然在一定误差范围内保持，这样的性质适合在k-means中使用。
 
         K-means的目标函数用矩阵表示为
         \begin{equation*}
@@ -223,6 +234,13 @@
     \therefore A\vec{x} &=(UP)\vec{x} = U(P\vec{x})\\
     \end{align*}
     因为P只有n个非零元，计算$P\vec{x}$的时间复杂度为$O(n)$,利用二的幂次的性质，递归计算$U(P\vec{x})$的时间复杂度也为$O(n)$,更一般的情况下，在使用随机投影降维的算法中，理论上时间复杂度可以降低$max\{n,d\}$，但是不论是在mailman算法的原始文献中还是在随机投影降维的文章中，作者都表示实际无法达到理论效果，所以并没有对该算法进一步尝试。
+
+
+    \section{基于SVD的降维方法}
+    \label{sec:svdsec}
+
+
+    \section{结论}
 
 \addcontentsline{toc}{section}{参考文献}
 \nocite{*} % So we don't need to explicitly cite them
