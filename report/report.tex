@@ -13,6 +13,7 @@
 
 % Define the section symbol
 \renewcommand{\sectionautorefname}{\S}
+\renewcommand{\subsectionautorefname}{\S}
 \geometry{left=3.17cm,right=3.17cm,top=2.54cm,bottom=2.54cm}
 
 \title{用于$k$-means聚类的降维方法研究}
@@ -39,6 +40,18 @@
     在本文中，我们研究了一种基于随机投影的特征提取算法(\autoref{sec:rpsec}）和一种基于特征值分解的特征选择算法（\autoref{sec:svdsec}）。
     我们通过理论推导和实验验证分别证明了以上两种方法的正确性。此外，针对这两种方法存在的问题，
     我们进行了分析并提出了我们的改进方案。对比实验证明我们的改进方案有明显的效果。
+
+    \begin{center}
+        \resizebox*{10cm}{1.8cm}{
+            \begin{tabular}{|c|c|c|c|}
+                \hline
+                方法 & 维度 & 时间复杂度 & 近似比 \\ \hline
+                特征提取 & $O(k/\epsilon^2)$ & $nd[\epsilon^{-2}k/ \log(n)]$ & $2 + \epsilon$ \\ \hline
+                特征选择 & $\Theta(k \log(k / \epsilon) / \epsilon^2)$ & $min(nd^2, n^2 d)$ & $2 + \epsilon$ \\ 
+                \hline
+            \end{tabular}
+        }
+    \end{center}
 
     本文中算法的代码实现、实验结果和实验报告均在本项目的 \href{https://github.com/fandahao17/K-means-with-dimension-reduction}{GitHub} 仓库中。
     
@@ -255,9 +268,68 @@
     因为P只有n个非零元，计算$P\vec{x}$的时间复杂度为$O(n)$,利用二的幂次的性质，递归计算$U(P\vec{x})$的时间复杂度也为$O(n)$,更一般的情况下，在使用随机投影降维的算法中，理论上时间复杂度可以降低$max\{n,d\}$，但是不论是在mailman算法的原始文献中还是在随机投影降维的文章中，作者都表示实际无法达到理论效果，所以并没有对该算法进一步尝试。
 
 
-    \section{基于SVD的降维方法}
+    \section{基于SVD的特征选择}
     \label{sec:svdsec}
+    尽管特征提取方法可以得到非常好的降维效果，但由于该方法得到的特征都是人为构造的，因而可解释性略差。
+    相比之下，特征选择算法直接从原矩阵中抽取一些特征，我们可以清晰地看到哪些特征出现在了降维后的矩阵里（\autoref{sec:svdexp}）,
+    可解释性非常好。
 
+    事实上，SVD和$k$-means聚类有着十分紧密的联系。我们知道，$X_{opt}$的秩至多为k，而$A_k$是$A$的最佳秩为k的估计，
+    因此一个有趣的结论如下：
+    \begin{align*}
+        \Vert A_{\rho - k} \Vert_F^2 = \Vert A - A_k \Vert_F^2 \leq \Vert A - X_{opt} X_{opt}^T A \Vert_F^2
+    \end{align*}
+    
+    在\cite{drineas1999clustering}中，作者证明了将$A$投影到其最佳$k$维子空间得到的$n \times k$矩阵$\tilde{A}=U_k \Sigma_k$后进行$k$-means聚类，可以
+    得到一个最优聚类的2-approximation：
+    \begin{align*}
+        \Vert A - \tilde{X}_{opt} \tilde{X}_{opt}^T A \Vert_F^2 \leq 2 \min \Vert A - X X^T A \Vert_F^2
+    \end{align*}
+
+    这实际上是本小节中介绍的算法的出发点。在本算法中，我们将以上k个构造的特征
+    替换为$\Theta(k \log(k / \epsilon) / \epsilon^2)$个实际的特征，得到一个$(2+\epsilon)$-approximate的结果。
+    
+    \subsection{算法概述}
+    \begin{algorithm}[htb]
+    \caption{用于$k$-means聚类的特征选择算法}
+    \label{SVD}
+        \begin{algorithmic}[1] %这个1 表示每一行都显示数字
+        \REQUIRE ~~\\ %算法的输入参数：Input
+            矩阵 $ A \in R^{n \times d}$, 类的数目k, 误差因子 $\varepsilon \in (0, 1)$, $\gamma$近似的k-means算法。 \\
+        \ENSURE ~~\\ %算法的输出：Output
+            矩阵 $ X_{\tilde{\gamma}} $ 表示聚类结果。
+
+        \STATE 设置目标维度 $ r = \Theta(k \log(k / \epsilon) / \epsilon^2)$。
+
+        \STATE 计算前$k$个右奇异向量$V_k$。
+
+        \STATE 计算\textbf{杠杆得分}$p_i$，对于$i=1, \dots, d$，$p_i = \Vert (V_k)_{(i)} \Vert_2^2 / k$。
+        \label{compls}
+
+        \STATE 进行$r$次\textit{有放回}的采样，每一次以$p_i$的概率保留第i个特征，并将其乘以系数$(rp_i)^{-1/2}$。
+
+        \STATE 在上一步产生的$n \times r$矩阵$\tilde{A}$上运行$\gamma$近似的$k$-means算法，返回矩阵$X_{\tilde{\gamma}}$。
+
+        \end{algorithmic}
+    \end{algorithm}
+
+    可以看到，该算法是通过随机采样的方式进行特征选择的。特别地，以上方法称为\textbf{杠杆得分采样}（\textit{leverage score sampling}）。
+    杠杆得分是在该算法第3步计算出的，它代表了特征的“重要性”，在\cite{Mahoney2009cur}中有对其清晰的解释：
+
+    根据SVD分解，我们可以将A的第j列表示为左奇异向量的线性组合：$A^j=\sum_{i=1}^{r} (\sigma_i u^i)v_j^i$，其中$v_j^i$表示第j个右奇异向量的第i个元素。
+    我们也可以用前k个左奇异向量估计$A^j=\sum_{i=1}^{k} (\sigma_i u^i)v_j^i$。因此，特征的重要性可以根据其在前k个左奇异向量组成的线性空间中的长度决定，即：
+    $\pi_j = \frac{1}{k} \sum_{i=1}^{k} (v_j^i)^2$，此处除以k是为了归一化。
+
+    可以证明，以上算法运行于近似比为$\gamma$，失败率为$\delta_\gamma$的$k$-means聚类算法上时，可以以
+    至少$0.5-\delta_\gamma$的概率得到$(1+(1+\epsilon)\gamma)$近似的聚类结果。降维算法中最复杂的运算为
+    求前k个右奇异向量，因此时间复杂度为$O(\min(nd^2, n^2d))$。
+
+    \subsection{理论推导}
+
+    \subsection{实验验证}
+    \label{sec:svdexp}
+
+    \subsection{思考与改进}
 
     \section{结论}
 
