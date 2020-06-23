@@ -7,6 +7,7 @@
 \usepackage{url}
 \usepackage{hyperref}
 \usepackage{algorithmic}
+\usepackage{subcaption}
 \usepackage{graphicx}
 \usepackage{amsthm}
 \usepackage{amssymb}
@@ -325,11 +326,94 @@
     求前k个右奇异向量，因此时间复杂度为$O(\min(nd^2, n^2d))$。
 
     \subsection{理论推导}
+    本小节对以上特征选择算法的PAC-界给出理论推导\cite{boutsidis2009unsupervised,boutsidis2014randomized}。
+
+    \newtheorem{thm}{\bf 定理}[]
+    \begin{thm}
+        按照算法\autoref{SVD}的得到的聚类结果$X_{\tilde{\gamma}}$，以至少
+        $0.5-\delta_\gamma$的概率满足：
+        $$
+            \Vert A - X_{\tilde{\gamma}} X_{\tilde{\gamma}^T} A \Vert_F^2 \leq (1 + ( 1+\epsilon ) \gamma ) \Vert A - X_{opt} X_{opt}^T A \Vert_F^2
+        $$
+    \end{thm}
+
+    为了证明以上定理，先给出一下引理：
+    \newtheorem{lemma}{\bf 引理}[]
+    \begin{lemma}
+        若$r$满足算法\autoref{SVD}中的条件，则以下四个语句以至少0.5的概率同时成立：
+        \begin{enumerate}
+            \item $\Vert V_k^T S D \Vert_2 = \sigma_{max}(V_k^T S D) \leq \sqrt{1 + \lambda}$。
+            \item $\Vert (V_k^T S D)^+ \Vert_2 = 1 / \sigma_{min}(V_k^T S D) \leq \sqrt{1 / (1 - \lambda)}$。
+            \item $V_k^T S D$满秩。
+            \item $A_k = (ASD) (V_k^T SD)^+ V_k^T + E$，其中$\Vert E \Vert_F \leq \mu \Vert A - A_k \Vert_F$。
+        \end{enumerate}
+        其中，$\lambda$和$\mu$为给定的常数\cite{boutsidis2009unsupervised}。
+        
+    \end{lemma}
 
     \subsection{实验验证}
     \label{sec:svdexp}
 
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.8\textwidth]{result/words.png}
+        \caption{算法\autoref{SVD}选出的特征}
+        \label{fig:svdfeat}
+    \end{figure}
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.8\textwidth]{result/nipsp.png}
+        \caption{算法\autoref{SVD}的分类正确率和目标函数值}
+        \label{fig:nipsp}
+    \end{figure}
+
+    \subsubsection{两种方法的比较}
+        我们还在ORL数据集上对特征选择和特征提取算法的正确率和执行时间进行了比较：
+        \begin{figure}
+            \centering
+            \begin{subfigure}{.5\textwidth}
+                \centering
+                \includegraphics[width=1.0\linewidth]{result/precision.jpg}
+                \caption{正确率}
+            \end{subfigure}%
+            \begin{subfigure}{.5\textwidth}
+                \centering
+                \includegraphics[width=1.0\linewidth]{result/time.jpg}
+                \caption{执行时间}
+            \end{subfigure}
+            \caption{两种降维算法的比较}
+            \label{fig:cmp}
+        \end{figure}
     \subsection{思考与改进}
+
+    \subsubsection{用近似SVD算法加速SVD计算}
+        \begin{figure}
+            \centering
+            \begin{subfigure}{.5\textwidth}
+                \centering
+                \includegraphics[width=1.0\linewidth]{result/accuracy_rand.jpg}
+                \caption{正确率}
+            \end{subfigure}%
+            \begin{subfigure}{.5\textwidth}
+                \centering
+                \includegraphics[width=1.0\linewidth]{result/time_rand.jpg}
+                \caption{执行时间}
+            \end{subfigure}
+            \caption{利用近似SVD加速后的效果}
+            \label{fig:3cmp}
+        \end{figure}
+
+
+    \subsubsection{关于杠杆得分采样效果的讨论}
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.6\textwidth]{result/nipscmp.png}
+            \caption{进行与不进行rescale的正确率分布}
+        \end{figure}
+
+
+    \subsubsection{与确定性算法的比较}
 
     \section{结论}
 
