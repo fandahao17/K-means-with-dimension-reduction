@@ -19,6 +19,7 @@
 \renewcommand{\figureautorefname}{图}
 \renewcommand{\theoremautorefname}{定理}
 \newcommand{\algorithmautorefname}{算法}
+\renewcommand{\tableautorefname}{表}
 \geometry{left=3.17cm,right=3.17cm,top=2.54cm,bottom=2.54cm}
 
 \title{用于$k$-means聚类的降维方法研究}
@@ -515,8 +516,8 @@
     \label{sec:appsvd}
     在\autoref{sec:svdexp}中，我们发现SVD计算非常费时，影响了特征选择算法的执行速度。
     事实上，学术界对加速SVD计算的方法已经有了深入的研究\cite{halko2011finding}，在本小节中，我们介绍一种
-    随机算法来加速SVD计算\cite{szlam2014implementation}，下面概述其计算步骤：
-    \begin{algorithm}[H]
+    随机算法来加速SVD计算\cite{szlam2014implementation}，\autoref{redsvd}概述其计算步骤。
+    \begin{algorithm}[h]
     \caption{近似SVD算法}
     \label{redsvd}
         \begin{algorithmic}[1] %这个1 表示每一行都显示数字
@@ -554,20 +555,80 @@
     \subsubsection{关于杠杆得分采样效果的讨论}
     \label{sec:lsdis}
     在\autoref{fig:nipsp}中，我们得出的结论是特征选择算法的正确率很高，但这是
-    我们进行了一百次重复实验后取目标函数最大的聚类结果得到的。实际上，这一百次实验的正确率分布如\autoref{fig:rescale}
+    我们进行了一百次重复实验后取目标函数最大的聚类结果得到的。实际上，这一百次实验的正确率分布如\autoref{fig:rescale}，
+    右侧的散点图表明了一个常见的聚类结果：出现离群点，几乎所有点都被分到了同一类。
+    注意右侧的散点图是通过t-sne\cite{maaten2008visualizing}降维后画出的。
 
     \begin{figure}[H]
         \centering
-        \includegraphics[width=0.6\textwidth]{result/nipscmp.png}
-        \caption{进行与不进行rescale的正确率分布}
+        \begin{subfigure}{.5\textwidth}
+            \centering
+            \includegraphics[width=1.0\linewidth]{result/nipscmp.png}
+            \caption{rescale前后的正确率分布}
+        \end{subfigure}%
+        \begin{subfigure}{.5\textwidth}
+            \centering
+            \includegraphics[width=1.0\linewidth]{result/abnormal.jpg}
+            \caption{常见的聚类结果}
+        \end{subfigure}
+        \caption{杠杆得分采样效果分析}
         \label{fig:rescale}
     \end{figure}
 
+    经过对降维前后的矩阵进行对比分析，我们认为这是由于算法的rescale过程破坏了原始矩阵中
+    不同特征之间的相对关系，导致某些特征被过度放大，拥有这些特征的点因此成为了离群点。
+    为了证明这一猜测，我们对比了\autoref{SVD}在ORL和NIPS数据集上选出特征的杠杆得分：
 
+    \begin{table}[h]
+        \centering
+        \begin{tabular}{|c|c|c|}
+            \hline
+            & ORL & NIPS \\ \hline
+            最小 & 4.03e-5 & 6.81e-6 \\ \hline
+            最大 & 2.73e-4 & 0.14 \\ \hline
+            方差 & 2.43e-9 & 3.4e-3 \\ \hline
+        \end{tabular}
+        \caption{ORL和NIPS数据集的杠杆得分}
+        \label{table:cmp}
+    \end{table}
 
+    在实验中我们发现，ORL数据集的聚类成功率非常稳定，而由\autoref{table:cmp}可以看出， 
+    它的特征杠杆得分也比较均匀。相比之下，NIPS数据集的特征重点比较突出，杠杆得分方差大，
+    可能导致一些特征被放大很多倍，以至于特征的关系被破坏。
 
-    \subsubsection{与确定性算法的比较}
+    为了减小NIPS数据集杠杆得分之间的差异，我们将\autoref{SVD}中的杠杆得分计算公式改为：
+    $$
+    p_{i}=\left\|\left(V_{k}\right)_{(i)}\right\|_{2} / k
+    $$
+
+    再次实验后，我们可以将100次实验中聚类正确率达到$50\%$以上的次数从约30次提高到约50次，
+    我们认为这表明杠杆得分分布过于分散确实可能导致\autoref{SVD}的实际效果不好。
+
+    \subsubsection{与$\tilde{A}=A V_k$的比较}
     \label{sec:cmppca}
+    在\autoref{SVD}的开头，我们介绍了\cite{drineas1999clustering}中提到利用$\tilde{A}=U_k \Sigma_k$
+    进行聚类可以得到得到最优聚类的一个近似比为2的估计。这个算法实际上就是我们常用的PCA算法，
+    这个算法是一个确定性的算法，其提供的近似比似乎也是最好的，因此，我们以它为基准，
+    比较了不同算法的正确率。在各算法需要进行SVD计算的时候，我们都用\autoref{redsvd}来替代，
+    因此他们的执行时间都基本相同。
+
+    \begin{table}[h]
+        \centering
+        \begin{tabular}{|c|c|c|}
+            \hline
+            & ORL & NIPS \\ \hline
+            $A$ & 0.78 & 0.87 \\ \hline
+            $AV_k$ & 0.77 & 0.87 \\ \hline
+            $ASD$ & 0.76 & 0.82 \\ \hline 
+            $AR$ & 0.70 & 0.80 \\ \hline
+        \end{tabular}
+        \caption{不同算法的正确率对比}
+        \label{table:fullcmp}
+    \end{table}
+
+    从\autoref{table:fullcmp}可以看到，利用PCA方法实际上可以得到和不降维几乎相同的聚类效果，
+    而特征选择和特征提取算法尽管与前两者相比有差距，但也有不错的聚类效果。特征选择算法的可解释性、特征提取算法中
+    随机投影计算的速度，都是他们各自的优势。
 
     \section{结论}
 
