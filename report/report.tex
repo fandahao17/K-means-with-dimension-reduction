@@ -15,6 +15,10 @@
 % Define the section symbol
 \renewcommand{\sectionautorefname}{\S}
 \renewcommand{\subsectionautorefname}{\S}
+\renewcommand{\subsubsectionautorefname}{\S}
+\renewcommand{\figureautorefname}{图}
+\renewcommand{\theoremautorefname}{定理}
+\newcommand{\algorithmautorefname}{算法}
 \geometry{left=3.17cm,right=3.17cm,top=2.54cm,bottom=2.54cm}
 
 \title{用于$k$-means聚类的降维方法研究}
@@ -333,7 +337,7 @@
     \newtheorem{thm}{\bf 定理}[]
     \begin{thm}
     \label{thmsvd}
-        按照算法\autoref{SVD}的得到的聚类结果$X_{\tilde{\gamma}}$，以至少
+        按照\autoref{SVD}的得到的聚类结果$X_{\tilde{\gamma}}$，以至少
         $0.5-\delta_\gamma$的概率满足：
         $$
             \Vert A - X_{\tilde{\gamma}} X_{\tilde{\gamma}^T} A \Vert_F^2 \leq (1 + ( 1+\epsilon ) \gamma ) \Vert A - X_{opt} X_{opt}^T A \Vert_F^2
@@ -342,17 +346,17 @@
 
     为了证明以上定理，先给出以下两个概念：
 
-    \textbf{采样矩阵}$S$是一个$d \times r$矩阵，它是这样构造出的：在算法\autoref{SVD}的有放回采样过程中，
+    \textbf{采样矩阵}$S$是一个$d \times r$矩阵，它是这样构造出的：在\autoref{SVD}的有放回采样过程中，
     每次若第$i$个特征被选中，则将$e_i$（第i项为1，其它均为0的列向量）加入到矩阵$S$中都会出现。
 
-    \textbf{缩放矩阵}$D$是一个$r \times r$对角矩阵，在算法\autoref{SVD}采样的过程中，若第$t$次采样，第$i$个特征被
+    \textbf{缩放矩阵}$D$是一个$r \times r$对角矩阵，在\autoref{SVD}采样的过程中，若第$t$次采样，第$i$个特征被
     选中，则将第$t$列的对角项设为$1 / \sqrt{rp_i}$。
 
     有了以上两个定义，下面给出一个引理\cite{boutsidis2009unsupervised}：
     \newtheorem{lemma}{\bf 引理}[]
     \begin{lemma}
     \label{lmsvd}
-        若$r$满足算法\autoref{SVD}中的条件，则以下四个语句以至少0.5的概率同时成立：
+        若$r$满足\autoref{SVD}中的条件，则以下四个语句以至少0.5的概率同时成立：
         \begin{enumerate}
             \item $\Vert V_k^T S D \Vert_2 = \sigma_{max}(V_k^T S D) \leq \sqrt{1 + \lambda}$。
             \item $\Vert (V_k^T S D)^+ \Vert_2 = 1 / \sigma_{min}(V_k^T S D) \leq \sqrt{1 / (1 - \lambda)}$。
@@ -440,13 +444,11 @@
 
         在第一步，我们运用了引理\autoref{lmsvd}和三角不等式，第二步我们将前一项的$A_k$展开，
         后一项去掉了投影矩阵，第三步我们去掉了投影矩阵并使用了本章开头的结论。将上述结论带回$\theta_3$，则：
-
         $$
         \theta_{3} \leq \sqrt{\gamma}(\sqrt{\frac{1+\lambda}{1-\lambda}}(1+\mu)+\mu) \sqrt{F_{o p t}}
         $$
 
         易知，括号内的部分小于$\sqrt{1 + \lambda}$，由此，我们得到：
-
         $$
         \theta_{3}^{2} \leq \gamma(1+\epsilon) F_{o p t}
         $$
@@ -456,24 +458,35 @@
     \end{proof}
     \subsection{实验验证}
     \label{sec:svdexp}
+    我们首先在原文所使用的NIPS数据集\cite{chechik2007eec}上进行了验证。
+    数据集为一个$183 \times 6314$的文本-词项矩阵，包含了2001-2003年发表在NIPS上的文章，分为神经科学、学习理论、控制和强化学习三类。
+    \autoref{fig:svdfeat}和\autoref{fig:nipsp}表示了我们的实验结果。
 
-    \begin{figure}
+    \begin{figure}[H]
         \centering
         \includegraphics[width=0.8\textwidth]{result/words.png}
-        \caption{算法\autoref{SVD}选出的特征}
+        \caption{\autoref{SVD}选出的特征}
         \label{fig:svdfeat}
     \end{figure}
 
-    \begin{figure}
+    从\autoref{fig:svdfeat}可以看出，有一些特征被重复选了多次，根据领域知识可以知道，
+    这些特征恰恰是不同领域中具有代表性的词语，这说明我们的选择算法是有效的。此外，我们可以直观地
+    看到算法选出的特征，也说明了特征选择算法良好的可解释性[\autoref{sec:svdsec}]。
+
+    \begin{figure}[H]
         \centering
         \includegraphics[width=0.8\textwidth]{result/nipsp.png}
-        \caption{算法\autoref{SVD}的分类正确率和目标函数值}
+        \caption{\autoref{SVD}的分类正确率和目标函数值}
         \label{fig:nipsp}
     \end{figure}
 
+    从\autoref{fig:nipsp}可以看出，降维后聚类的正确率与不降维的差距不大。事实上，尽管
+    我们的算法要求目标维度$ r = \Theta(k \log(k / \epsilon) / \epsilon^2)$，但是
+    在实验中选择远小于该值的$r$就可以良好地完成降维任务。
+
     \subsubsection{两种方法的比较}
         我们还在ORL数据集上对特征选择和特征提取算法的正确率和执行时间进行了比较：
-        \begin{figure}
+        \begin{figure}[H]
             \centering
             \begin{subfigure}{.5\textwidth}
                 \centering
@@ -488,35 +501,73 @@
             \caption{两种降维算法的比较}
             \label{fig:cmp}
         \end{figure}
-    \subsection{思考与改进}
 
-    \subsubsection{用近似SVD算法加速SVD计算}
-        \begin{figure}
+        比较的结果非常直观，相对来讲，基于SVD的特征选择算法比基于随机投影的特征提取算法正确率
+        稍高，但执行时间则长了很多。这是由于SVD运算的时间复杂度是三次方量级。事实上，在实际的
+        大数据计算中，我们难以承受对巨大的矩阵进行SVD分解的时间和空间开销\cite{blum2020foundations,halko2011finding,halko2011finding}。
+    
+    \subsection{思考与改进}
+    在本小节中，针对上一小节实验中发现的SVD执行速度慢的问题，我们利用一种近似SVD算法进行改进[\autoref{sec:appsvd}]，
+    我们还将就杠杆得分函数的有效性进行讨论[\autoref{sec:lsdis}]，最后，我们将我们的降维方法与确定性的
+    PCA方法进行比较[\autoref{sec:cmppca}]。
+
+    \subsubsection{用近似算法加速SVD计算}
+    \label{sec:appsvd}
+    在\autoref{sec:svdexp}中，我们发现SVD计算非常费时，影响了特征选择算法的执行速度。
+    事实上，学术界对加速SVD计算的方法已经有了深入的研究\cite{halko2011finding}，在本小节中，我们介绍一种
+    随机算法来加速SVD计算\cite{szlam2014implementation}，下面概述其计算步骤：
+    \begin{algorithm}[H]
+    \caption{近似SVD算法}
+    \label{redsvd}
+        \begin{algorithmic}[1] %这个1 表示每一行都显示数字
+        \REQUIRE ~~\\ %算法的输入参数：Input
+            矩阵 $ A \in R^{n \times d}$, 参数k。
+        \ENSURE ~~\\ %算法的输出：Output
+            近似的前k个奇异值和奇异向量。
+        \STATE 将$A$作用于$k$个独立同分布的随机向量得到$B$，可以证明，$B$以很大概率覆盖A的列向量空间\cite{halko2011finding}。
+        \STATE 利用Gram-Schmidt等方法得到$B$的标准正交基$Q$。
+        \STATE 由于$Q$几乎覆盖了$A$的列向量空间，所以有$A \approx Q Q^T A = Q (Q^T A)$。
+        \STATE 计算$Q^T A$的SVD：U、S、V，因为它只有$k \times n$维，所以计算很快。
+        \STATE $A \approx Q Q^T A = (QU) S V^T$。
+        \end{algorithmic}
+    \end{algorithm}
+
+    我们利用\autoref{redsvd}替换\autoref{SVD}中计算前k个右奇异向量的过程，可以看到，它的执行时间
+    与随机投影算法已经基本相同，主要受限于$k$-means的执行速度，而它的准确率却几乎没有下降。
+    \begin{figure}[H]
+        \centering
+        \begin{subfigure}{.5\textwidth}
             \centering
-            \begin{subfigure}{.5\textwidth}
-                \centering
-                \includegraphics[width=1.0\linewidth]{result/accuracy_rand.jpg}
-                \caption{正确率}
-            \end{subfigure}%
-            \begin{subfigure}{.5\textwidth}
-                \centering
-                \includegraphics[width=1.0\linewidth]{result/time_rand.jpg}
-                \caption{执行时间}
-            \end{subfigure}
-            \caption{利用近似SVD加速后的效果}
-            \label{fig:3cmp}
-        \end{figure}
+            \includegraphics[width=1.0\linewidth]{result/accuracy_rand.jpg}
+            \caption{正确率}
+        \end{subfigure}%
+        \begin{subfigure}{.5\textwidth}
+            \centering
+            \includegraphics[width=1.0\linewidth]{result/time_rand.jpg}
+            \caption{执行时间}
+        \end{subfigure}
+        \caption{利用近似SVD加速后的效果}
+        \label{fig:3cmp}
+    \end{figure}
 
 
     \subsubsection{关于杠杆得分采样效果的讨论}
-        \begin{figure}
-            \centering
-            \includegraphics[width=0.6\textwidth]{result/nipscmp.png}
-            \caption{进行与不进行rescale的正确率分布}
-        \end{figure}
+    \label{sec:lsdis}
+    在\autoref{fig:nipsp}中，我们得出的结论是特征选择算法的正确率很高，但这是
+    我们进行了一百次重复实验后取目标函数最大的聚类结果得到的。实际上，这一百次实验的正确率分布如\autoref{fig:rescale}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.6\textwidth]{result/nipscmp.png}
+        \caption{进行与不进行rescale的正确率分布}
+        \label{fig:rescale}
+    \end{figure}
+
+
 
 
     \subsubsection{与确定性算法的比较}
+    \label{sec:cmppca}
 
     \section{结论}
 
