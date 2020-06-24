@@ -57,6 +57,7 @@
     本文中算法的代码实现、实验结果和实验报告均在本项目的 \href{https://github.com/fandahao17/K-means-with-dimension-reduction}{GitHub} 仓库中。
     
     \subsection{数学符号约定}
+    \label{sec:symbols}
     由于下文涉及大量数学推导，因此在此给出其中使用的数学符号的约定：
     \begin{itemize}
         \item 对于$n \times d$数据矩阵$A$，约定$U_k \in R^{n \times k}$（$V_k \in R^{k \times d}$为前k个左（右）特征向量，$\Sigma_k \in R^{k \times k}$为
@@ -66,7 +67,8 @@
             $\Vert XY \Vert_F \leq \Vert X \Vert_2 \Vert Y \Vert_F$。
         \item 称$A^+$为A的伪逆，$\Vert A^+ \Vert = \sigma_{max}(A^+)=1/\sigma_{min}(A)$，
             其中$\sigma_{max}$和$\sigma_{min}$分别代表矩阵最大和最小的奇异值。
-        \item 对于一个方阵$P$，若其满足$P^2=P$，则称其为投影矩阵。
+        \item 对于一个方阵$P$，若其满足$P^2=P$，则称其为投影矩阵。一个显而易见的结论是，若$P$为投影矩阵，则$I-P$也是投影矩阵。
+        另外,对任意矩阵$A$，$\Vert PA \Vert_F \leq \Vert A \Vert_F$。
     \end{itemize}
 
     \subsection{k-means目标函数的形式化}
@@ -330,6 +332,7 @@
 
     \newtheorem{thm}{\bf 定理}[]
     \begin{thm}
+    \label{thmsvd}
         按照算法\autoref{SVD}的得到的聚类结果$X_{\tilde{\gamma}}$，以至少
         $0.5-\delta_\gamma$的概率满足：
         $$
@@ -337,9 +340,18 @@
         $$
     \end{thm}
 
-    为了证明以上定理，先给出一下引理：
+    为了证明以上定理，先给出以下两个概念：
+
+    \textbf{采样矩阵}$S$是一个$d \times r$矩阵，它是这样构造出的：在算法\autoref{SVD}的有放回采样过程中，
+    每次若第$i$个特征被选中，则将$e_i$（第i项为1，其它均为0的列向量）加入到矩阵$S$中都会出现。
+
+    \textbf{缩放矩阵}$D$是一个$r \times r$对角矩阵，在算法\autoref{SVD}采样的过程中，若第$t$次采样，第$i$个特征被
+    选中，则将第$t$列的对角项设为$1 / \sqrt{rp_i}$。
+
+    有了以上两个定义，下面给出一个引理\cite{boutsidis2009unsupervised}：
     \newtheorem{lemma}{\bf 引理}[]
     \begin{lemma}
+    \label{lmsvd}
         若$r$满足算法\autoref{SVD}中的条件，则以下四个语句以至少0.5的概率同时成立：
         \begin{enumerate}
             \item $\Vert V_k^T S D \Vert_2 = \sigma_{max}(V_k^T S D) \leq \sqrt{1 + \lambda}$。
@@ -351,6 +363,97 @@
         
     \end{lemma}
 
+    \begin{proof}
+        首先证明前两条：
+
+        定义随机向量$y \in R^k$如下：对于$i = 1, \dots, d$，P[$y=y_i$] $= p_i$，其中$y_{i}=(1 / \sqrt{p_{i}})\left(V_{k}^{T}\right)^{(i)}$。那么，
+        $S$和$D$的定义表明：$V_{k}^{T} S D D S^{T} V_{k}=\frac{1}{r} \sum_{i=1}^{d} y_{i} y_{i}^{T}$，
+        \(p_{i}=\left\|\left(V_{k}^{T}\right)^{(i)}\right\|_{2} / k\)使得\(\|y\|_{2} \leq \sqrt{k}\).
+        又有\(\left.E\left[y y^{T}\right]=\sum_{i=1}^{d} p_{i} \frac{1}{\sqrt{p_{i}}}\left(V_{k}^{T}\right)^{(i)} \frac{1}{\sqrt{p_{i}}}\left(V_{k}^{T}\right)^{(i)}\right)^{T}=V_{k}^{T} V_{k}=I_{k}\)。
+        运用\cite{rudelson2007sampling}中的定理3.1，结合Markov不等式，得到对于足够大的$c_0$，以至少$1-1/6$的概率：
+        $$
+        \left\|V_{k}^{T} S D D S^{T} V_{k}-I_{k}\right\|_{2} \leq 6 c_{0} \sqrt{k \log (r) / r}
+        $$
+        
+        根据矩阵摄动理论\cite{boutsidis2009unsupervised}，有：
+        $$
+        \left\|V_{k}^{T} S D D S^{T} V_{k}-I_{k}\right\|_{2}=\left|\sigma_{i}^{2}\left(V_{k}^{T} S D\right)-1\right| \leq 6 c_{o} \sqrt{k \log (r) / r}
+        $$
+
+        前两条因此得证。为了证明第三条，我们只需证明$V_k^T S D$的第$k$个奇异值为正。事实上，
+        $\epsilon$的取值和引理的第二条已经保证了这一结果。
+
+        为了证明第四条，我们首先有：
+        $$
+        \begin{aligned}\left\|A_{k}-A S D\left(V_{k}^{T} S D\right)^{+} V_{k}^{T}\right\|_{F} &=\left\|A_{k}-A_{k} S D\left(V_{k}^{T} S D\right)^{+} V_{k}^{T}-A_{\rho-k} S D\left(V_{k}^{T} S D\right)^{+} V_{k}^{T}\right\|_{F} \\ & \leq\left\|A_{k}-A_{k} S D\left(V_{k}^{T} S D\right)^{+} V_{k}^{T}\right\|_{F}+\left\|A_{\rho-k} S D\left(V_{k}^{T} S D\right)^{+} V_{k}^{T}\right\|_F \end{aligned}
+        $$
+
+        以上第一步，我们将$A$替换为$A_k + A_{\rho - k}$，第二步运用了矩阵范数的三角不等式。我们将第一项设为$\theta_1$，第二项为$\theta_2$，则有：
+        $$
+        \begin{aligned} \theta_{1} &=\left\|A_{k}-U_{k} \Sigma_{k} V_{k}^{T} S D\left(V_{k}^{T} S D\right)^{+} V_{k}^{T}\right\|_{F} \\ &=\left\|A_{k}-U_{k} \Sigma_{k} I_{k} V_{k}^{T}\right\|_{F}=0 \end{aligned}
+        $$
+        $$
+        \begin{aligned} \theta_{2} &=\left\|U_{\rho-k} \Sigma_{\rho-k} V_{\rho-k}^{T} S D\left(V_{k}^{T} S D\right)^{+} V_{k}^{T}\right\|_{F} \\ & \leq\left\|\Sigma_{\rho-k} V_{\rho-k}^{T} S D\left(V_{k}^{T} S D\right)^{+}\right\|_{F} \end{aligned}
+        $$
+
+        对于后一项，如果前三项以至少$1-1/6$的概率成立，则以至少$1-1/3$的概率有：
+        $$
+        \left\|\Sigma_{\rho-k} V_{\rho-k}^{T} S D\left(V_{k}^{T} S D\right)^{+}\right\|_{F} \leq(\epsilon \sqrt{6 /\left(2 c_{1} c_{o}^{2} \log \left(c_{1} c_{o}^{2} k / \epsilon^{2}\right)\right)}+\sqrt{6 \lambda^{2} /(1-\lambda)})\left\|A-A_{k}\right\|_{F}
+        $$
+
+        因此，根据union bound，所有四条引理以至少$1-1/6-1/3= 1-1/2$的概率成立。
+
+        证毕。
+    \end{proof}
+
+    有了以上引理，我们可以对定理\autoref{thmsvd}给出证明：
+    \begin{proof}
+        首先，我们将$A$分为$A=A_k + A_{\rho-k}$，再运用矩阵范数勾股定理\cite{boutsidis2014randomized}，则有：
+        $$
+        \left\|A-X_{\tilde{\gamma}} X_{\tilde{\gamma}}^{T} A\right\|_{F}^{2}=\left\|\left(I-X_{\tilde{\gamma}} X_{\tilde{\gamma}}^{T}\right) A_{k}\right\|_{F}^{2}+\left\|\left(I-X_{\tilde{\gamma}} X_{\tilde{\gamma}}^{T}\right) A_{\rho-k}\right\|_{F}^{2}
+        $$
+
+        与引理的证明相同，我们将第一项称为$\theta_3^2$，第二项称为$\theta_4^2$。对于第二项，由于$I-X_{\tilde{\gamma}} X_{\tilde{\gamma}}^T$是投影矩阵，
+        去掉它不会使范数增大，再结合本章开头的结论，有：
+        $$
+        \theta_4^2 \leq F_{opt}
+        $$
+
+        下面讨论第一项的界：
+        $$
+        \begin{aligned} \theta_{3} & \leq\left\|\left(I-X_{\tilde{\gamma}} X_{\tilde{\gamma}}^{T}\right) A S D\left(V_{k} S D\right)^{+} V_{k}^{T}\right\|_{F}+\|E\|_{F} \\ & \leq\left\|\left(I-X_{\tilde{\gamma}} X_{\tilde{\gamma}}^{T}\right) A S D\right\|_{F}\left\|\left(V_{k} S D\right)^{+}\right\|_{2}+\|E\|_{F} \\ & \leq \sqrt{\gamma}\left\|\left(I-X_{o p t} X_{o p t}^{T}\right) A S D\right\|_{F}\left\|\left(V_{k} S D\right)^{+}\right\|_{2}+\|E\|_{F} \\ & \leq \sqrt{\gamma}\left\|\left(I-X_{o p t} X_{o p t}^{T}\right) A S D\left(V_{k} S D\right)^{+}\right\|_{F}\left\|\left(V_{k} S D\right)\right\|_{2}\left\|\left(V_{k} S D\right)^{+}\right\|_{2}+\|E\|_{F} \\ &=\sqrt{\gamma}\left\|\left(I-X_{o p t} X_{o p t}^{T}\right) A S D\left(V_{k} S D\right)^{+} V_{k}^{T}\right\|_{F}\left\|\left(V_{k} S D\right)\right\|_{2}\left\|\left(V_{k} S D\right)^{+}\right\|_{2}+\|E\|_{F} \end{aligned}
+        $$
+
+        其中，第一步我们使用了引理\autoref{lmsvd}、三角不等式和投影矩阵的性质，第二步我们使用了
+        数学符号约定（\autoref{sec:symbols}）里的结果，第三步是基于以下结论：
+        $$
+        \left\|\left(I-X_{\tilde{\gamma}} X_{\tilde{\gamma}}^{T}\right) A S D\right\|_{F}^{2} \leq \gamma \min _{X \in \mathcal{X}}\left\|\left(I-X X^{T}\right) A S D\right\|_{F}^{2} \leq \gamma\left\|\left(I-X_{o p t} X_{o p t}^{T}\right) A S D\right\|_{F}^{2}
+        $$
+
+        在第四步和第五步，我们分别加入了一些不影响矩阵范数的项。
+
+        我们设$\theta_5 = \left\|\left(I-X_{o p t} X_{o p t}^{T}\right) A S D\left(V_{k} S D\right)^{+} V_{k}^{T}\right\|_{F}$，则可以有如下对其的讨论：
+
+        $$
+        \begin{aligned} \theta_{5} & \leq\left\|\left(I-X_{o p t} X_{o p t}^{T}\right) A_{k}\right\|_{F}+\left\|\left(I-X_{o p t} X_{o p t}^{T}\right) E\right\|_{F} \\ & \leq\left\|\left(I-X_{o p t} X_{o p t}^{T}\right) A V_{k} V_{k}^{T}\right\|_{F}+\|E\|_{F} \\ & \leq(1+\mu) \sqrt{F_{o p t}} \end{aligned}
+        $$
+
+        在第一步，我们运用了引理\autoref{lmsvd}和三角不等式，第二步我们将前一项的$A_k$展开，
+        后一项去掉了投影矩阵，第三步我们去掉了投影矩阵并使用了本章开头的结论。将上述结论带回$\theta_3$，则：
+
+        $$
+        \theta_{3} \leq \sqrt{\gamma}(\sqrt{\frac{1+\lambda}{1-\lambda}}(1+\mu)+\mu) \sqrt{F_{o p t}}
+        $$
+
+        易知，括号内的部分小于$\sqrt{1 + \lambda}$，由此，我们得到：
+
+        $$
+        \theta_{3}^{2} \leq \gamma(1+\epsilon) F_{o p t}
+        $$
+
+        由于定理\autoref{thmsvd}失效当且仅当引理\autoref{lmsvd}或近似$k$-means算法失效，
+        两者概率至多为$0.5+\delta_\gamma$。综上，定理得证。
+    \end{proof}
     \subsection{实验验证}
     \label{sec:svdexp}
 
