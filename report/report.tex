@@ -28,7 +28,7 @@
     \maketitle
 
     \begin{abstract}
-        降维的方法包括特征选择和特征提取两种，本文使用SVD作为特征选择方法和随机投影作为特征提取方法，对ORL人脸数据集以及其他数据集（改）进行降维，并使用k-means对降维之后的结果进行聚类。我们比较了两种方法，并分别进行了一些优化。
+        降维的方法包括特征选择和特征提取两种，本文使用基于特征值选择的特征选择方法和基于随机投影的特征提取方法，对ORL人脸数据集以及NIPS数据集进行降维，并使用k-means对降维之后的结果进行聚类。我们比较了两种方法，并分别进行了一些优化。
     \end{abstract}
     \tableofcontents
     \newpage
@@ -53,19 +53,19 @@
                 \hline
                 方法 & 维度 & 时间复杂度 & 近似比 \\ \hline
                 特征提取 & $O(k/\epsilon^2)$ & $nd[\epsilon^{-2}k/ \log(n)]$ & $2 + \epsilon$ \\ \hline
-                特征选择 & $\Theta(k \log(k / \epsilon) / \epsilon^2)$ & $min(nd^2, n^2 d)$ & $2 + \epsilon$ \\ 
+                特征选择 & $\Theta(k \log(k / \epsilon) / \epsilon^2)$ & $min(nd^2, n^2 d)$ & $2 + \epsilon$ \\
                 \hline
             \end{tabular}
         }
     \end{center}
 
     本文中算法的代码实现、实验结果和实验报告均在本项目的 \href{https://github.com/fandahao17/K-means-with-dimension-reduction}{GitHub} 仓库中。
-    
+
     \subsection{数学符号约定}
     \label{sec:symbols}
     由于下文涉及大量数学推导，因此在此给出其中使用的数学符号的约定：
     \begin{itemize}
-        \item 对于$n \times d$数据矩阵$A$，约定$U_k \in R^{n \times k}$（$V_k \in R^{k \times d}$为前k个左（右）特征向量，$\Sigma_k \in R^{k \times k}$为
+        \item 对于$n \times d$数据矩阵$A$，约定$U_k \in R^{n \times k}$，$V_k \in R^{k \times d}$为前k个左（右）特征向量，$\Sigma_k \in R^{k \times k}$为
             A的前k个特征向量组成的对角矩阵。
         \item 约定$\rho$为A的秩，则$A_{\rho - k}$等于$A-A_k$，其中$A_k=U_k \Sigma_k V_k$。
         \item 约定$\Vert A \Vert_F$和$\Vert A \Vert_2$为A的Frobenius范数和频谱范数。矩阵范数满足如下性质：$\Vert XY \Vert_F \leq \Vert X \Vert_F \Vert Y \Vert_2$且
@@ -98,7 +98,7 @@
     \subsection{背景和引入}
         随机投影属于特征提取方法的一种，所依据的原理是JL 引理\cite{johnson1984extensions}，即经过线性变换f之后原点集中两个点的距离仍然在一定误差范围内保持，这样的性质适合在k-means中使用。
 
-        在这个实验中我们使用Lloyd算法实现k-means聚类，虽然这个算法没有最差保证，但是通过初始点的选择保证聚类的效果不会很差。
+        在实验中，我们使用Lloyd算法实现k-means聚类，虽然这个算法没有最差保证，但是通过初始点的选择保证聚类的效果不会很差。
 
     \subsection{算法描述和时间复杂度分析}
     \subsubsection{算法描述}
@@ -128,7 +128,7 @@
     \end{algorithm}
 
     \subsubsection{时间复杂度分析}
-    Lloyd算法一个循环的时间复杂度从$O(knd)$降到了$O(nk^2/\varepsilon^2)$.
+    使用随机投影降维之后，Lloyd算法一个循环的时间复杂度从$O(knd)$降到了$O(nk^2/\varepsilon^2)$.
     使用$\gamma = 1 + \varepsilon$近似的k-means算法,对于$\forall \varepsilon \in (0, 1/3)$,时间复杂度为$O(nd\lceil\varepsilon^{-2}k/log(d)\rceil + 2^{(k/\varepsilon)^{O(1)}}kn/\varepsilon^2)$.
 
     \subsubsection{算法的近似比}
@@ -138,11 +138,10 @@
     \end{equation*}
 
     \subsection{算法近似比的数学证明}
-    下面简单的证明上面关于近似比的结论
+    在本节简单证明上面关于近似比的结论
     \begin{proof}
-    $  A = A_{k} + A_{\rho - k} $\\
-    其中, $ \rho $ 代表A的秩, $A_{k} = U_{k}\sum_{k}V_{k}, U_{k},V_{k},\sum_{k}$分别是由前k个左右奇异向量和奇异值组成的矩阵.由正交性
     \begin{align*}
+    &  A = A_{k} + A_{\rho - k}\\
     &\| A - X_{\tilde{\gamma}}X_{\tilde{\gamma}}^{\top}A \|_{F}^2 =
      \| (I - X_{\tilde{\gamma}}X_{\tilde{\gamma}}^{\top})A_{k} \|_{F}^2
     + \| (I - X_{\tilde{\gamma}}X_{\tilde{\gamma}}^{\top}) A_{k} \|_{F}^2\\
@@ -176,9 +175,9 @@
     \end{proof}
 
     \subsection{实验复现}
-    实验使用ORL人脸数据集，这个数据集包含40类，每一类包含10张人脸图片，因为刚开始没有找到分辨率64*64的数据，使用的是分辨率112 *92 的数据集。由于数据按照类顺序排列，使用Lloyd算法时取每一类的第一张图片作为初始类中心。\\
+    实验使用ORL人脸数据集，这个数据集包含40类，每一类包含10张人脸图片，在此实验中我们使用分辨率112 *92 的数据集。由于数据按照类顺序排列，Lloyd算法初始化时我们取每一类的第一张图片作为初始类中心。\\
 
-    选取三个评价指标，分别是
+    在这里对于K-means结果，我们选取三个评价指标，分别是
     \begin{itemize}
     \item 归一化的目标函数，表示k-means收敛的情况
     \item 分类的准确率,使用正确分类的图片数除以总数
@@ -219,7 +218,7 @@
     \end{enumerate}
 
     \subsubsection{构造新的随机投影矩阵}
-    下面除了论文中随机投影矩阵的构造方法之外，另外使用三种随机投影矩阵的构造方法
+    下面除了论文中随机投影矩阵的构造方法之外，另外使用三种随机投影矩阵的构造方法\cite{alelyani2018feature}
     \begin{itemize}
     \item $\forall i,j \quad R_{i,j} \sim N(0,1)$
     \item 在本实验随机矩阵的基础上，使用稀疏矩阵，满足
@@ -258,7 +257,7 @@
     考虑随机性等原因，我们认为使用这四种随机投影矩阵进行降维并用在k-means中对于分类准确率影响不大.\\
 
     \subsubsection{使用mailman算法加速矩阵向量乘法}
-    当矩阵A的每个元素只取固定的值时，mailman算法能够把矩阵向量乘法$A\vec{x}$的时间复杂度从$O(mn)$降到$O(mn/log(max{m,n}))$
+    当矩阵A的每个元素只取固定的值时，mailman算法\cite{10.1016/j.ipl.2008.09.028}能够把矩阵向量乘法$A\vec{x}$的时间复杂度从$O(mn)$降到$O(mn/log(max{m,n}))$
     Mailman算法的核心思想是矩阵向量乘法$A\vec{x}$,其中$A \in R^{m \times n}, \vec{x}\in R^{n \times 1}$可以分解成以下形式\\
     \begin{equation*}
     A\vec{x} = \sum_{i=1}^n A^{(i)}x^{(i)}
@@ -287,7 +286,7 @@
     \begin{align*}
         \Vert A_{\rho - k} \Vert_F^2 = \Vert A - A_k \Vert_F^2 \leq \Vert A - X_{opt} X_{opt}^T A \Vert_F^2
     \end{align*}
-    
+
     在\cite{drineas1999clustering}中，作者证明了将$A$投影到其最佳$k$维子空间得到的$n \times k$矩阵$\tilde{A}=U_k \Sigma_k$后进行$k$-means聚类，可以
     得到一个最优聚类的2-approximation：
     \begin{align*}
@@ -296,7 +295,7 @@
 
     这实际上是本小节中介绍的算法的出发点。在本算法中，我们将以上k个构造的特征
     替换为$\Theta(k \log(k / \epsilon) / \epsilon^2)$个实际的特征，得到一个$(2+\epsilon)$-approximate的结果。
-    
+
     \subsection{算法概述}
     \begin{algorithm}[htb]
     \caption{用于$k$-means聚类的特征选择算法}
@@ -365,7 +364,7 @@
             \item $A_k = (ASD) (V_k^T SD)^+ V_k^T + E$，其中$\Vert E \Vert_F \leq \mu \Vert A - A_k \Vert_F$。
         \end{enumerate}
         其中，$\lambda$和$\mu$为给定的常数\cite{boutsidis2009unsupervised}。
-        
+
     \end{lemma}
 
     \begin{proof}
@@ -379,7 +378,7 @@
         $$
         \left\|V_{k}^{T} S D D S^{T} V_{k}-I_{k}\right\|_{2} \leq 6 c_{0} \sqrt{k \log (r) / r}
         $$
-        
+
         根据矩阵摄动理论\cite{boutsidis2009unsupervised}，有：
         $$
         \left\|V_{k}^{T} S D D S^{T} V_{k}-I_{k}\right\|_{2}=\left|\sigma_{i}^{2}\left(V_{k}^{T} S D\right)-1\right| \leq 6 c_{o} \sqrt{k \log (r) / r}
@@ -506,7 +505,7 @@
         比较的结果非常直观，相对来讲，基于SVD的特征选择算法比基于随机投影的特征提取算法正确率
         稍高，但执行时间则长了很多。这是由于SVD运算的时间复杂度是三次方量级。事实上，在实际的
         大数据计算中，我们难以承受对巨大的矩阵进行SVD分解的时间和空间开销\cite{blum2020foundations,halko2011finding,halko2011finding}。
-    
+
     \subsection{思考与改进}
     在本小节中，针对上一小节实验中发现的SVD执行速度慢的问题，我们利用一种近似SVD算法进行改进[\autoref{sec:appsvd}]，
     我们还将就杠杆得分函数的有效性进行讨论[\autoref{sec:lsdis}]，最后，我们将我们的降维方法与确定性的
@@ -592,7 +591,7 @@
         \label{table:cmp}
     \end{table}
 
-    在实验中我们发现，ORL数据集的聚类成功率非常稳定，而由\autoref{table:cmp}可以看出， 
+    在实验中我们发现，ORL数据集的聚类成功率非常稳定，而由\autoref{table:cmp}可以看出，
     它的特征杠杆得分也比较均匀。相比之下，NIPS数据集的特征重点比较突出，杠杆得分方差大，
     可能导致一些特征被放大很多倍，以至于特征的关系被破坏。
 
@@ -619,7 +618,7 @@
             & ORL & NIPS \\ \hline
             $A$ & 0.78 & 0.87 \\ \hline
             $AV_k$ & 0.77 & 0.87 \\ \hline
-            $ASD$ & 0.76 & 0.82 \\ \hline 
+            $ASD$ & 0.76 & 0.82 \\ \hline
             $AR$ & 0.70 & 0.80 \\ \hline
         \end{tabular}
         \caption{不同算法的正确率对比}
@@ -631,6 +630,7 @@
     随机投影计算的速度，都是他们各自的优势。
 
     \section{结论}
+    在本文中，我们成功实现了基于特征值选择和随即投影的两种降维方法，并分别进行了优化工作。在基于随即投影的降维方法中，我们尝试使用不同的随机投影矩阵并学习了mailman算法加速矩阵向量乘法。在基于SVD的降维方法中，我们利用随机算法加速SVD计算，思考Rescale操作的实际效果和数据集的关系并进行优化，并尝试将A投影到$V_k$空间，得到了高效且聚类正确率高的降维方法。这些优化对原方法进行了有效的提升。
 
 \addcontentsline{toc}{section}{参考文献}
 \nocite{*} % So we don't need to explicitly cite them
